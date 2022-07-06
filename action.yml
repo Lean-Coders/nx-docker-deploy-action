@@ -1,6 +1,26 @@
 name: "build & deploy docker in NX Workspace"
 description: "builds docker image and deploys it in k8s cluster"
 
+inputs:
+  ACR_URL:
+    description: "tbd..."
+    required: true
+  AZURE_LOGIN:
+    description: "tbd..."
+    required: true
+  AZURE_PASSWORD:
+    description: "tbd..."
+    required: true
+  AZURE_CREDENTIALS:
+    description: "tbd..."
+    required: true
+  AZURE_RESOURCEGROUP:
+    description: "tbd..."
+    required: true
+  AZURE_CLUSTERNAME:
+    description: "tbd..."
+    required: true
+
 runs:
   using: "composite"
   steps:
@@ -10,16 +30,16 @@ runs:
     - uses: nrwl/nx-set-shas@v2
     - uses: azure/docker-login@v1
       with:
-        login-server: ${{ secrets.ACR_URL }}
-        username: ${{ secrets.AZURE_LOGIN }}
-        password: ${{ secrets.AZURE_PASSWORD }}
+        login-server: ${{ inputs.ACR_URL }}
+        username: ${{ inputs.AZURE_LOGIN }}
+        password: ${{ inputs.AZURE_PASSWORD }}
     - uses: azure/login@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        creds: ${{ inputs.AZURE_CREDENTIALS }}
     - uses: azure/aks-set-context@v2
       with:
-        resource-group: ${{ secrets.AZURE_RESOURCEGROUP }}
-        cluster-name: ${{ secrets.AZURE_CLUSTERNAME }}
+        resource-group: ${{ inputs.AZURE_RESOURCEGROUP }}
+        cluster-name: ${{ inputs.AZURE_CLUSTERNAME }}
     - name: build docker base image
       run: |
         mkdir -p ./repo/docker-cache
@@ -37,8 +57,3 @@ runs:
 
         mkdir -p k8s
     - uses: actions/download-artifact@v3
-    - name: build & push docker images
-      run: |
-        npm ci
-        npx nx affected --target=docker
-        npx nx affected --target=deploy
