@@ -1,0 +1,44 @@
+name: "build & deploy docker in NX Workspace"
+description: "builds docker image and deploys it in k8s cluster"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: nrwl/nx-set-shas@v2
+    - uses: azure/docker-login@v1
+      with:
+        login-server: ${{ secrets.ACR_URL }}
+        username: ${{ secrets.AZURE_LOGIN }}
+        password: ${{ secrets.AZURE_PASSWORD }}
+    - uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - uses: azure/aks-set-context@v2
+      with:
+        resource-group: ${{ secrets.AZURE_RESOURCEGROUP }}
+        cluster-name: ${{ secrets.AZURE_CLUSTERNAME }}
+    - name: build docker base image
+      run: |
+        mkdir -p ./repo/docker-cache
+        XFILE=./repo/docker-cache/base.tar
+        if [ -f "$XFILE" ]; then
+            echo "$XFILE exists."
+            docker load < ./repo/docker-cache/base.tar
+        else
+          echo "$XFILE does not exist."
+          docker build --tag=builder .
+          docker save -o ./repo/docker-cache/base.tar builder
+        fi
+
+        chmod +x ./tools/docker/*.sh
+
+        mkdir -p k8s
+    - uses: actions/download-artifact@v3
+    - name: build & push docker images
+      run: |
+        npm ci
+        npx nx affected --target=docker
+        npx nx affected --target=deploy
