@@ -41,6 +41,7 @@ runs:
         resource-group: ${{ inputs.AZURE_RESOURCEGROUP }}
         cluster-name: ${{ inputs.AZURE_CLUSTERNAME }}
     - name: build docker base image
+      shell: bash
       run: |
         mkdir -p ./repo/docker-cache
         XFILE=./repo/docker-cache/base.tar
